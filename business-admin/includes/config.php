@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set('Asia/Kolkata');
 
 $conn = new mysqli(
-    'localhost',
+    'srv1740.hstgr.io',
     'u966043993_mithran',
     'Mithranebike@29',
     'u966043993_mithran'
