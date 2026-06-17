@@ -32,7 +32,7 @@
                 <li><a href="vehicle-sales.php">Vehicle Sales</a></li>
                 <li><a href="vehicle-deliveries.php">Vehicle Deliveries</a></li>
                 <li><a href="insurance-rto-report.php">Insurance & RTO</a></li>
-                <li><a href="insurance-rto-report.php">E-Way Bill</a></li>
+                <li><a href="eway-bills.php">E-Way Bill</a></li>
             </ul>
         </li>
 
