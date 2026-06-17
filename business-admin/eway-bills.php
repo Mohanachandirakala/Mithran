@@ -2,7 +2,7 @@
 ob_start();
 session_start();
 
-require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/config.php';
 
 if (!isset($conn) || !($conn instanceof mysqli)) {
     die('Database connection is not available. Check includes/db.php.');
