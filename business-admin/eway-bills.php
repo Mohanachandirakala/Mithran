@@ -1821,7 +1821,7 @@ $pageTitle = 'E-Way Bills';
                             <table id="ewayTable" class="table table-bordered table-striped mb-0">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th>#</th>
+                                        <th>S.No</th>
                                         <th>Draft / EBN</th>
                                         <th>Invoice / Customer</th>
                                         <th>Branch</th>
