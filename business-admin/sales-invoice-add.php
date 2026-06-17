@@ -67,6 +67,21 @@ function columnExists(mysqli $conn, string $table, string $column): bool
 }
 
 
+function ensureSalesCategoryColumn(mysqli $conn): void
+{
+    if (!tableExists($conn, 'sales_invoices')) {
+        return;
+    }
+
+    if (!columnExists($conn, 'sales_invoices', 'sales_category')) {
+        $conn->query("
+            ALTER TABLE sales_invoices
+            ADD COLUMN sales_category ENUM('b2b','b2c') NOT NULL DEFAULT 'b2c'
+            AFTER invoice_type
+        ");
+    }
+}
+
 function ensureVehicleOptionalUniqueColumns(mysqli $conn): void
 {
     if (!tableExists($conn, 'vehicle_stock')) {
@@ -528,6 +543,7 @@ if (
 }
 
 ensureVehicleOptionalUniqueColumns($conn);
+ensureSalesCategoryColumn($conn);
 
 /* MASTER DATA */
 $branches = fetchAllAssoc($conn, "
@@ -643,6 +659,7 @@ $form = [
     'customer_id' => 0,
     'invoice_date' => date('Y-m-d\TH:i'),
     'invoice_type' => getAllowedInvoiceTypeByBranch($currentBranchId > 0 ? $currentBranchId : ((int)($branches[0]['id'] ?? 0))),
+    'sales_category' => 'b2c',
     'discount_amount' => '0.00',
     'round_off' => '0.00',
     'paid_amount' => '0.00',
@@ -666,6 +683,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($form['invoice_type'], ['product_sale', 'vehicle_sale', 'mixed_sale'], true)) {
         $form['invoice_type'] = getAllowedInvoiceTypeByBranch($form['branch_id']);
     }
+
+    $form['sales_category'] = strtolower(trim($_POST['sales_category'] ?? 'b2c'));
+    if (!in_array($form['sales_category'], ['b2b', 'b2c'], true)) {
+        $form['sales_category'] = 'b2c';
+    }
+
     $form['discount_amount'] = trim($_POST['discount_amount'] ?? '0.00');
     $form['round_off'] = trim($_POST['round_off'] ?? '0.00');
     $form['paid_amount'] = trim($_POST['paid_amount'] ?? '0.00');
@@ -915,12 +938,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO sales_invoices 
                 (
                     business_id, branch_id, invoice_no, customer_id, invoice_date,
-                    invoice_type, subtotal, discount_amount, cgst_amount, sgst_amount,
+                    invoice_type, sales_category, subtotal, discount_amount, cgst_amount, sgst_amount,
                     igst_amount, cess_amount, round_off, grand_total, paid_amount,
                     balance_amount, payment_status, sale_status, customer_note,
                     created_by, created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ";
 
             $stmt = $conn->prepare($invoiceSql);
@@ -933,13 +956,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cessAmount = 0.0;
 
             $stmt->bind_param(
-                'iisissddddddddddsssi',
+                'iisisssddddddddddsssi',
                 $businessId,
                 $form['branch_id'],
                 $form['invoice_no'],
                 $invCustId,
                 $invoiceDateDb,
                 $form['invoice_type'],
+                $form['sales_category'],
                 $subtotal,
                 $invoiceDiscount,
                 $cgstAmount,
@@ -1316,6 +1340,14 @@ html,body{height:100%;width:100%;overflow-x:hidden;font-family:system-ui,-apple-
 <div class="card">
 <div class="card-body">
     <span class="section-label">📋 Invoice Details</span>
+
+    <div class="field-row">
+        <label class="form-label">Sales Type <span style="color:#ef4444">*</span></label>
+        <select name="sales_category" id="sales_category" class="form-select" required>
+            <option value="b2c" <?= (($form['sales_category'] ?? 'b2c') === 'b2c') ? 'selected' : '' ?>>B2C - Business to Customer</option>
+            <option value="b2b" <?= (($form['sales_category'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B - Business to Business</option>
+        </select>
+    </div>
 
     <div style="display:flex;gap:10px;margin-bottom:12px">
         <div style="flex:1">
